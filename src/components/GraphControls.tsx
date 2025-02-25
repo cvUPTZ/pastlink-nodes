@@ -84,6 +84,10 @@ export default function GraphControls() {
 
   const handleAddEdge = () => {
     if (!newEdge.source || !newEdge.target || !newEdge.label) return;
+    // Prevent self-loops
+    if (newEdge.source === newEdge.target) {
+      return;
+    }
     addEdge(newEdge);
     setIsAddEdgeOpen(false);
     setNewEdge({ source: "", target: "", label: "", type: "influences" });
@@ -92,7 +96,12 @@ export default function GraphControls() {
   // Handlers for updating nodes/edges
   const handleUpdateNode = () => {
     if (editNode && editNode.label) {
-      updateNode(editNode);
+      updateNode(editNode.id, {
+        type: editNode.type,
+        label: editNode.label,
+        subtitle: editNode.subtitle,
+        imageUrl: editNode.imageUrl
+      });
       setIsEditNodeOpen(false);
       setEditNode(null);
     }
@@ -100,7 +109,12 @@ export default function GraphControls() {
 
   const handleUpdateEdge = () => {
     if (editEdge && editEdge.source && editEdge.target && editEdge.label) {
-      updateEdge(editEdge);
+      updateEdge(editEdge.id, {
+        source: editEdge.source,
+        target: editEdge.target,
+        label: editEdge.label,
+        type: editEdge.type
+      });
       setIsEditEdgeOpen(false);
       setEditEdge(null);
     }
@@ -237,7 +251,7 @@ export default function GraphControls() {
               </div>
               <Button
                 disabled={
-                  !newEdge.source || !newEdge.target || !newEdge.label
+                  !newEdge.source || !newEdge.target || !newEdge.label || newEdge.source === newEdge.target
                 }
                 onClick={handleAddEdge}
               >
@@ -442,7 +456,7 @@ export default function GraphControls() {
               </div>
               <Button
                 disabled={
-                  !editEdge.source || !editEdge.target || !editEdge.label
+                  !editEdge.source || !editEdge.target || !editEdge.label || editEdge.source === editEdge.target
                 }
                 onClick={handleUpdateEdge}
               >

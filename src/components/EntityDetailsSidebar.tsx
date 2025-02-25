@@ -80,7 +80,6 @@ const EntityDetailsSidebar = () => {
 
           <div>
             <h3 className="text-sm font-medium mb-2">Connections</h3>
-            <h3 className="text-sm font-medium mb-2">Connections</h3>
             {connections.length > 0 ? (
               <div className="space-y-2">
                 {connections.map((connection) => (

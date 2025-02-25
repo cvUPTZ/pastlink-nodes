@@ -233,34 +233,35 @@ export function GraphProvider({ children }: { children: ReactNode }) {
     [supabase, arrangeNodes],
   );
 
-  const addNode = useCallback(
-    (node: Omit<NodeData, "position">) => {
-      const newNode: Node<NodeData> = {
-        id: uuidv4(),
-        position: {
-          x: containerDimensions.width / 2 + (Math.random() * 100 - 50),
-          y: containerDimensions.height / 2 + (Math.random() * 100 - 50),
-        },
-        data: {
-          ...node,
-          position: {
-            x: containerDimensions.width / 2 + (Math.random() * 100 - 50),
-            y: containerDimensions.height / 2 + (Math.random() * 100 - 50),
-          },
-        },
-      };
-      setNodes((prev) => [...prev, newNode]);
-    },
-    [containerDimensions],
-  );
+  // Only the methods that need updating in the GraphContext.tsx
 
-  const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
-    setNodes((prev) =>
-      prev.map((node) =>
-        node.id === id ? { ...node, data: { ...node.data, ...data } } : node,
-      ),
-    );
-  }, []);
+const addNode = useCallback(
+  (nodeData: Omit<NodeData, "position">) => {
+    const position = {
+      x: containerDimensions.width / 2 + (Math.random() * 100 - 50),
+      y: containerDimensions.height / 2 + (Math.random() * 100 - 50),
+    };
+    
+    const newNode: Node<NodeData> = {
+      id: uuidv4(),
+      position: position,
+      data: {
+        ...nodeData,
+        // Remove position from data to avoid duplication
+      },
+    };
+    setNodes((prev) => [...prev, newNode]);
+  },
+  [containerDimensions],
+);
+
+const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
+  setNodes((prev) =>
+    prev.map((node) =>
+      node.id === id ? { ...node, data: { ...node.data, ...data } } : node,
+    ),
+  );
+}, []);
 
   const removeNode = useCallback(
     (id: string) => {

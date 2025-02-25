@@ -18,10 +18,10 @@ export default defineConfig(({ mode }) => {
   return {
     server: {
       host: "", // or '0.0.0.0'
-      allowedHosts: ["hzq47m-8080.csb.app"], // Use an array
+      allowedHosts: ["rhh5hr-8081.csb.app"], // Use an array
       port: 8080,
       hmr: {
-        host: "hzq47m-8080.csb.app", // No protocol (https://) needed
+        host: "rhh5hr-8081.csb.app", // No protocol (https://) needed
       },
     },
     plugins: plugins,

@@ -10,24 +10,20 @@ import {
   ConnectionMode,
   ReactFlowInstance,
   BackgroundVariant,
-  useNodesState,
-  useEdgesState,
-  addEdge as addEdgeReactFlow,
-  OnConnectStartParams,
-} from "@xyflow/react";
+  XYPosition,
+} from '@xyflow/react';
 import "@xyflow/react/dist/style.css";
 import BaseNode from "./nodes/BaseNode";
 import { useGraph } from "@/context/GraphContext";
 import { debounce } from "lodash";
 import { NodeData, EdgeTypes, EdgeType } from "@/lib/types";
-import dagre from "dagre";
 
 const nodeTypes = {
   custom: BaseNode,
 };
 
 const getEdgeStyle = (type: EdgeType) => {
-  const styles: Record<string, React.CSSProperties> = {
+  const styles = {
     [EdgeTypes.CAUSES]: { stroke: "#ef4444", strokeWidth: 2 },
     [EdgeTypes.INFLUENCES]: { stroke: "#a855f7", strokeWidth: 2 },
     [EdgeTypes.PARTICIPATES]: { stroke: "#3b82f6", strokeWidth: 2 },
@@ -37,25 +33,23 @@ const getEdgeStyle = (type: EdgeType) => {
 };
 
 const useResizeObserver = (ref: React.RefObject<HTMLDivElement>) => {
-  const [dimensions, setDimensions] = useState<{
-    width: number;
-    height: number;
-  } | null>(null);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  const observerRef = useRef<ResizeObserver | null>(null);
 
   useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
+    if (!ref.current) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      if (entries.length > 0) {
-        const { width, height } = entries[0].contentRect;
-        setDimensions({ width, height });
-      }
-    });
+    const handleResize = (entries: ResizeObserverEntry[]) => {
+      const { width, height } = entries[0].contentRect;
+      setDimensions({ width, height });
+    };
 
-    resizeObserver.observe(element);
+    observerRef.current = new ResizeObserver(handleResize);
+    observerRef.current.observe(ref.current);
 
-    return () => resizeObserver.disconnect();
+    return () => {
+      observerRef.current?.disconnect();
+    };
   }, [ref]);
 
   return dimensions;
@@ -65,57 +59,18 @@ function hasType(data: any): data is { type: string } {
   return typeof data === "object" && data !== null && "type" in data;
 }
 
-const getLayoutedElements = (
-  nodes: Node<NodeData>[],
-  edges: Edge[],
-  direction: "TB" | "LR" = "TB"
-): { nodes: Node<NodeData>[]; edges: Edge[] } => {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-
-  const nodeWidth = 172;
-  const nodeHeight = 36;
-
-  dagreGraph.setGraph({ rankdir: direction });
-
-  nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-  });
-
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
-
-  dagre.layout(dagreGraph);
-
-  const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id);
-    return {
-      ...node,
-      position: {
-        x: nodeWithPosition.x - nodeWidth / 2,
-        y: nodeWithPosition.y - nodeHeight / 2,
-      },
-    };
-  });
-
-  return { nodes: layoutedNodes, edges };
-};
-
 const GraphDisplay = () => {
   const {
-    nodes: contextNodes,
-    edges: contextEdges,
+    nodes,
+    edges,
     selectNode,
     selectEdge,
     addEdge: addNewEdge,
     setContainerDimensions,
     containerDimensions,
     defaultEdgeType,
+    onNodesChangeHandler,
   } = useGraph();
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(contextNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(contextEdges);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
@@ -127,11 +82,11 @@ const GraphDisplay = () => {
         reactFlowInstance.current.fitView();
       }
     }, 200),
-    []
+    [],
   );
 
   useEffect(() => {
-    if (dimensions?.width && dimensions?.height) {
+    if (dimensions.width > 0 && dimensions.height > 0) {
       if (
         !containerDimensions ||
         dimensions.width !== containerDimensions.width ||
@@ -146,32 +101,18 @@ const GraphDisplay = () => {
     }
   }, [
     dimensions,
-    containerDimensions,
     setContainerDimensions,
+    containerDimensions,
     debouncedFitView,
   ]);
 
-  // Sync context nodes and edges into React Flow state
-  useEffect(() => {
-    setNodes(contextNodes);
-    setEdges(contextEdges);
-  }, [contextNodes, contextEdges, setNodes, setEdges]);
-
-  // Layout the graph when nodes or edges change
-  useEffect(() => {
-    if (nodes.length > 0) {
-      const layouted = getLayoutedElements(nodes, edges);
-      setNodes(layouted.nodes);
-      setEdges(layouted.edges);
-    }
-  }, [nodes.length, edges.length, nodes, edges, setNodes, setEdges]);
-
+  // Map context nodes/edges to ReactFlow format
   const flowNodes = nodes.map((node) => ({
     id: node.id,
     type: "custom",
     position: node.position || { x: 0, y: 0 },
     data: node.data,
-    draggable: true,
+    draggable: true, // Explicitly enable dragging
   }));
 
   const flowEdges = edges.map((edge) => ({
@@ -188,7 +129,7 @@ const GraphDisplay = () => {
     (_: React.MouseEvent, node: Node<NodeData>) => {
       selectNode(node);
     },
-    [selectNode]
+    [selectNode],
   );
 
   const handleEdgeClick = useCallback(
@@ -201,46 +142,27 @@ const GraphDisplay = () => {
         type: (edge.data?.type as EdgeType) || defaultEdgeType,
       });
     },
-    [selectEdge, defaultEdgeType]
+    [selectEdge, defaultEdgeType],
   );
 
   const onConnect = useCallback(
     (params: Connection) => {
-      if (params.source && params.target) {
-        const newEdge = {
-          id: `edge-${params.source}-${params.target}`,
+      if (params.source && params.target && params.source !== params.target) {
+        // Prevent self-loops
+        addNewEdge({
           source: params.source,
           target: params.target,
           label: "New Connection",
           type: EdgeTypes.INFLUENCES,
-        };
-        setEdges((eds) => addEdgeReactFlow(newEdge, eds));
-
-        // Sync with context
-        addNewEdge(newEdge);
+        });
       }
     },
-    [addNewEdge, setEdges]
+    [addNewEdge],
   );
 
   const onInit = useCallback((instance: ReactFlowInstance) => {
     reactFlowInstance.current = instance;
     instance.fitView();
-  }, []);
-
-  const onConnectStart = useCallback(
-    (connection: OnConnectStartParams, event: React.MouseEvent) => {
-      // Optional: handle connection start
-    },
-    []
-  );
-
-  const onConnectEnd = useCallback((event: React.MouseEvent) => {
-    // Optional: handle connection end
-  }, []);
-
-  const isValidConnection = useCallback((connection: Connection) => {
-    return connection.source !== connection.target;
   }, []);
 
   return (
@@ -251,8 +173,7 @@ const GraphDisplay = () => {
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onConnect={onConnect}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
+        onNodesChange={onNodesChangeHandler}
         nodeTypes={nodeTypes}
         nodesDraggable={true}
         connectOnClick={false}
@@ -260,17 +181,13 @@ const GraphDisplay = () => {
         onInit={onInit}
         fitView
         attributionPosition="bottom-right"
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        isValidConnection={isValidConnection}
-        defaultEdgeOptions={{ animated: true }}
       >
         <Background variant={BackgroundVariant.Dots} />
         <Controls />
         <MiniMap
           nodeColor={(node) => {
             if (hasType(node.data)) {
-              const colors: Record<string, string> = {
+              const colors = {
                 person: "#3b82f6",
                 event: "#ef4444",
                 place: "#22c55e",

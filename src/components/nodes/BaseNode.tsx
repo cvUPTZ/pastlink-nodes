@@ -1,6 +1,6 @@
-import React from "react";
 import { Handle, Position } from "@xyflow/react";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 import { Landmark, User, Calendar, Lightbulb } from "lucide-react";
 import {
   Tooltip,
@@ -15,6 +15,7 @@ interface BaseNodeProps {
   selected?: boolean;
   isConnectable: boolean;
   draggable?: boolean;
+  [key: string]: any;
 }
 
 const nodeConfig = {
@@ -49,27 +50,26 @@ export default function BaseNode({
   selected,
   isConnectable,
   draggable = true,
+  ...rest
 }: BaseNodeProps) {
-  const config =
-    nodeConfig[data.type as keyof typeof nodeConfig] || nodeConfig.concept;
+  const nodeType = data.type as keyof typeof nodeConfig;
+  const config = nodeConfig[nodeType] || nodeConfig.concept;
   const Icon = config.icon;
-
-  const nodeProps = {
-    className: cn(
-      "min-w-[180px] min-h-[90px] border-2 shadow-lg p-4 bg-gradient-to-br cursor-grab active:cursor-grabbing",
-      config.gradient,
-      config.border,
-      config.shape,
-      selected && "ring-2 ring-offset-2 ring-black"
-    ),
-    draggable: draggable,
-  };
 
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div {...nodeProps}>
+          <div
+            {...rest}
+            className={cn(
+              "min-w-[180px] min-h-[90px] border-2 shadow-lg p-4 bg-gradient-to-br cursor-grab active:cursor-grabbing",
+              config.gradient,
+              config.border,
+              config.shape,
+              selected && "ring-2 ring-offset-2 ring-black",
+            )}
+          >
             <Handle
               type="target"
               position={Position.Top}
@@ -110,7 +110,9 @@ export default function BaseNode({
         <TooltipContent>
           <p>
             {data.description ||
-              `${data.type.charAt(0).toUpperCase() + data.type.slice(1)}: ${data.label}`}
+              `${data.type.charAt(0).toUpperCase() + data.type.slice(1)}: ${
+                data.label
+              }`}
           </p>
         </TooltipContent>
       </Tooltip>

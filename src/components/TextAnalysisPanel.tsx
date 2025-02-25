@@ -1,9 +1,10 @@
+// src/components/TextAnalysisPanel.tsx
 import React, { useState } from "react";
 import { Card } from "./ui/card";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
-import { ArrowRight, X, AlertCircle } from "lucide-react";
+import { ArrowRight, X, AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { useGraph } from "@/context/GraphContext";
 import { Entity, NodeType } from "@/lib/types";
 import { Alert, AlertDescription } from "./ui/alert";
@@ -21,6 +22,8 @@ const TextAnalysisPanel = () => {
   const [text, setText] = useState(
     "George Washington lived at Mount Vernon during the American Revolution...",
   );
+  
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setText(e.target.value);
@@ -36,7 +39,6 @@ const TextAnalysisPanel = () => {
       setEntities(newEntities);
     } catch (error) {
       console.error("Error during text analysis:", error);
-      // Error is handled by the GraphContext and displayed below
     }
   };
 
@@ -57,24 +59,53 @@ const TextAnalysisPanel = () => {
     setEntities(entities.filter((entity) => entity.id !== id));
   };
 
-// Update the type check in TextAnalysisPanel
-const getEntityColor = (type: NodeType) => {
-  switch (type) {
-    case "person":
-      return "bg-blue-100 text-blue-800 border-blue-300";
-    case "event":
-      return "bg-red-100 text-red-800 border-red-300";
-    case "place":
-      return "bg-green-100 text-green-800 border-green-300";
-    case "concept":
-      return "bg-yellow-100 text-yellow-800 border-yellow-300";
-    default:
-      return "bg-gray-100 text-gray-800 border-gray-300";
+  const togglePanel = () => {
+    setIsPanelCollapsed(!isPanelCollapsed);
+  };
+
+  const getEntityColor = (type: NodeType) => {
+    switch (type) {
+      case "person":
+        return "bg-blue-100 text-blue-800 border-blue-300";
+      case "event":
+        return "bg-red-100 text-red-800 border-red-300";
+      case "place":
+        return "bg-green-100 text-green-800 border-green-300";
+      case "concept":
+        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-300";
+    }
+  };
+
+  if (isPanelCollapsed) {
+    return (
+      <div className="absolute top-4 left-4 z-10">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={togglePanel}
+          className="rounded-full h-8 w-8 p-0 bg-white shadow-md"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    );
   }
-};
 
   return (
-    <Card className="h-full w-[400px] bg-white flex flex-col p-4 border-r">
+    <Card className="h-full w-[400px] bg-white flex flex-col p-4 border-r relative">
+      <div className="absolute -right-4 top-4 z-10">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={togglePanel}
+          className="rounded-full h-8 w-8 p-0 bg-white shadow-md"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+      </div>
+
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xl font-semibold">Text Analysis</h2>
         <Button
@@ -87,6 +118,7 @@ const getEntityColor = (type: NodeType) => {
         </Button>
       </div>
 
+      {/* Rest of component remains the same */}
       <ScrollArea className="flex-grow">
         <Textarea
           value={text}
