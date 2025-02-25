@@ -67,7 +67,7 @@ export default function BaseNode({
               config.gradient,
               config.border,
               config.shape,
-              selected && "ring-2 ring-offset-2 ring-black",
+              selected && "ring-2 ring-offset-2 ring-black"
             )}
           >
             <Handle

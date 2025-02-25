@@ -1,9 +1,24 @@
-import React, { createContext, useCallback, useRef, useEffect,useContext ,useState, useMemo } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useRef,
+  useEffect,
+  useContext,
+  useState,
+  useMemo,
+} from "react";
 
 import { v4 as uuidv4 } from "uuid";
 import { createClient } from "@supabase/supabase-js";
-import { Node, Edge, applyNodeChanges, NodeChange } from '@xyflow/react';
-import { NodeData, EdgeData, NodeType, EdgeTypes, EdgeType, Entity } from "@/lib/types";
+import { Node, Edge, applyNodeChanges, NodeChange } from "@xyflow/react";
+import {
+  NodeData,
+  EdgeData,
+  NodeType,
+  EdgeTypes,
+  EdgeType,
+  Entity,
+} from "@/lib/types";
 
 export { EdgeTypes };
 export type { EdgeType, NodeData };
@@ -65,7 +80,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 
   const supabase = useMemo(
     () => createClient(supabaseUrl, supabaseAnonKey),
-    [],
+    []
   );
 
   const arrangeNodes = useCallback((entities: Entity[]) => {
@@ -73,7 +88,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
     const SPACING = 200;
     const COLS = Math.max(
       2,
-      Math.min(4, Math.ceil(Math.sqrt(entities.length))),
+      Math.min(4, Math.ceil(Math.sqrt(entities.length)))
     );
 
     // Group entities by type
@@ -143,7 +158,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
         // Filter out entities that already exist as nodes
         const existingNodeIds = new Set(nodes.map((node) => node.id));
         const newEntities = entitiesToConvert.filter(
-          (entity) => entity.id && !existingNodeIds.has(entity.id),
+          (entity) => entity.id && !existingNodeIds.has(entity.id)
         );
 
         if (newEntities.length === 0) {
@@ -163,7 +178,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
         setError("Failed to convert entities to nodes");
       }
     },
-    [arrangeNodes, nodes],
+    [arrangeNodes, nodes]
   );
 
   const analyzeText = useCallback(
@@ -176,7 +191,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
           "analyze-text",
           {
             body: { text },
-          },
+          }
         );
 
         if (functionError) {
@@ -197,7 +212,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
 
         // Convert entities to nodes
         const newNodes = arrangeNodes(validatedEntities);
-        setNodes(prevNodes => [...prevNodes, ...newNodes]);
+        setNodes((prevNodes) => [...prevNodes, ...newNodes]);
 
         // Process relationships into edges
         if (relationships && relationships.length > 0) {
@@ -212,7 +227,7 @@ export function GraphProvider({ children }: { children: ReactNode }) {
               description: rel.description,
             },
           }));
-          setEdges(prevEdges => [...prevEdges, ...newEdges]);
+          setEdges((prevEdges) => [...prevEdges, ...newEdges]);
         }
 
         setEntities(validatedEntities);
@@ -229,50 +244,50 @@ export function GraphProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       }
     },
-    [supabase, arrangeNodes],
+    [supabase, arrangeNodes]
   );
 
   // Only the methods that need updating in the GraphContext.tsx
 
-const addNode = useCallback(
-  (nodeData: Omit<NodeData, "position">) => {
-    const position = {
-      x: containerDimensions.width / 2 + (Math.random() * 100 - 50),
-      y: containerDimensions.height / 2 + (Math.random() * 100 - 50),
-    };
-    
-    const newNode: Node<NodeData> = {
-      id: uuidv4(),
-      position: position,
-      data: {
-        ...nodeData,
-        // Remove position from data to avoid duplication
-      },
-    };
-    setNodes((prev) => [...prev, newNode]);
-  },
-  [containerDimensions],
-);
+  const addNode = useCallback(
+    (nodeData: Omit<NodeData, "position">) => {
+      const position = {
+        x: containerDimensions.width / 2 + (Math.random() * 100 - 50),
+        y: containerDimensions.height / 2 + (Math.random() * 100 - 50),
+      };
 
-const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
-  setNodes((prev) =>
-    prev.map((node) =>
-      node.id === id ? { ...node, data: { ...node.data, ...data } } : node,
-    ),
+      const newNode: Node<NodeData> = {
+        id: uuidv4(),
+        position: position,
+        data: {
+          ...nodeData,
+          // Remove position from data to avoid duplication
+        },
+      };
+      setNodes((prev) => [...prev, newNode]);
+    },
+    [containerDimensions]
   );
-}, []);
+
+  const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
+    setNodes((prev) =>
+      prev.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, ...data } } : node
+      )
+    );
+  }, []);
 
   const removeNode = useCallback(
     (id: string) => {
       setNodes((prev) => prev.filter((node) => node.id !== id));
       setEdges((prev) =>
-        prev.filter((edge) => edge.source !== id && edge.target !== id),
+        prev.filter((edge) => edge.source !== id && edge.target !== id)
       );
       if (selectedNode?.id === id) {
         setSelectedNode(null);
       }
     },
-    [selectedNode],
+    [selectedNode]
   );
 
   const addEdge = useCallback(
@@ -289,7 +304,7 @@ const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
 
       if (!sourceExists || !targetExists) {
         console.warn(
-          `Cannot create edge: ${!sourceExists ? "source" : "target"} node doesn't exist`,
+          `Cannot create edge: ${!sourceExists ? "source" : "target"} node doesn't exist`
         );
         return;
       }
@@ -301,12 +316,12 @@ const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
       };
       setEdges((prev) => [...prev, newEdge]);
     },
-    [defaultEdgeType, nodes],
+    [defaultEdgeType, nodes]
   );
 
   const updateEdge = useCallback((id: string, data: Partial<EdgeData>) => {
     setEdges((prev) =>
-      prev.map((edge) => (edge.id === id ? { ...edge, ...data } : edge)),
+      prev.map((edge) => (edge.id === id ? { ...edge, ...data } : edge))
     );
   }, []);
 
@@ -317,7 +332,7 @@ const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
         setSelectedEdge(null);
       }
     },
-    [selectedEdge],
+    [selectedEdge]
   );
 
   const selectNode = useCallback((node: Node<NodeData> | null) => {
@@ -329,15 +344,12 @@ const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
     setSelectedEdge(edge);
     setSelectedNode(null);
   }, []);
- const onNodesChangeHandler = useCallback(
-    (changes: NodeChange[]) => {
-      setNodes((prevNodes) => {
-        const updatedNodes = applyNodeChanges(changes, prevNodes);
-        return updatedNodes;
-      });
-    },
-    []
-  );
+  const onNodesChangeHandler = useCallback((changes: NodeChange[]) => {
+    setNodes((prevNodes) => {
+      const updatedNodes = applyNodeChanges(changes, prevNodes);
+      return updatedNodes;
+    });
+  }, []);
 
   return (
     <GraphContext.Provider
@@ -366,7 +378,7 @@ const updateNode = useCallback((id: string, data: Partial<NodeData>) => {
         setDefaultEdgeType,
         analyzeText,
         convertEntitiesToNodes,
-        onNodesChangeHandler
+        onNodesChangeHandler,
       }}
     >
       {children}

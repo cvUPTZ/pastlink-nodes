@@ -100,7 +100,7 @@ export default function GraphControls() {
         type: editNode.type,
         label: editNode.label,
         subtitle: editNode.subtitle,
-        imageUrl: editNode.imageUrl
+        imageUrl: editNode.imageUrl,
       });
       setIsEditNodeOpen(false);
       setEditNode(null);
@@ -113,7 +113,7 @@ export default function GraphControls() {
         source: editEdge.source,
         target: editEdge.target,
         label: editEdge.label,
-        type: editEdge.type
+        type: editEdge.type,
       });
       setIsEditEdgeOpen(false);
       setEditEdge(null);
@@ -251,7 +251,10 @@ export default function GraphControls() {
               </div>
               <Button
                 disabled={
-                  !newEdge.source || !newEdge.target || !newEdge.label || newEdge.source === newEdge.target
+                  !newEdge.source ||
+                  !newEdge.target ||
+                  !newEdge.label ||
+                  newEdge.source === newEdge.target
                 }
                 onClick={handleAddEdge}
               >
@@ -266,9 +269,7 @@ export default function GraphControls() {
       {selectedNode && (
         <div className="p-4 border rounded-lg space-y-2">
           <h3 className="font-medium">Selected Node</h3>
-          <p className="text-sm text-muted-foreground">
-            {selectedNode.label}
-          </p>
+          <p className="text-sm text-muted-foreground">{selectedNode.label}</p>
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -297,9 +298,7 @@ export default function GraphControls() {
       {selectedEdge && (
         <div className="p-4 border rounded-lg space-y-2">
           <h3 className="font-medium">Selected Connection</h3>
-          <p className="text-sm text-muted-foreground">
-            {selectedEdge.label}
-          </p>
+          <p className="text-sm text-muted-foreground">{selectedEdge.label}</p>
           <div className="flex gap-2">
             <Button
               size="sm"
@@ -420,9 +419,7 @@ export default function GraphControls() {
                   <SelectContent>
                     <SelectItem value="causes">Causes</SelectItem>
                     <SelectItem value="influences">Influences</SelectItem>
-                    <SelectItem value="participates">
-                      Participates
-                    </SelectItem>
+                    <SelectItem value="participates">Participates</SelectItem>
                     <SelectItem value="located">Located At</SelectItem>
                   </SelectContent>
                 </Select>
@@ -456,7 +453,10 @@ export default function GraphControls() {
               </div>
               <Button
                 disabled={
-                  !editEdge.source || !editEdge.target || !editEdge.label || editEdge.source === editEdge.target
+                  !editEdge.source ||
+                  !editEdge.target ||
+                  !editEdge.label ||
+                  editEdge.source === editEdge.target
                 }
                 onClick={handleUpdateEdge}
               >
